@@ -1,0 +1,13 @@
+City,Model,RMSE,MAE
+Beijing,XGBoost,29.1936,23.3407
+Beijing,LSTM,46.5141,36.2356
+Beijing,iTransformer,42.3664,33.5901
+Beijing,SARIMAX,149.7632,116.5036
+New Delhi,XGBoost,36.6171,25.1456
+New Delhi,LSTM,48.5629,33.7643
+New Delhi,iTransformer,53.7272,36.2541
+New Delhi,SARIMAX,183.8920,172.0028
+Kathmandu,XGBoost,13.7934,10.2581
+Kathmandu,LSTM,22.2511,16.8019
+Kathmandu,iTransformer,31.7407,22.8937
+Kathmandu,SARIMAX,83.3254,67.5581
