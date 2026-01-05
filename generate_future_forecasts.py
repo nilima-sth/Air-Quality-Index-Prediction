@@ -13,7 +13,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 print("="*80)
-print("GENERATING PM2.5 FORECASTS FOR 2026-2030")
+print("GENERATING PM2.5 FORECASTS FOR 2026-2030 (DPI SET TO 500)")
 print("="*80)
 
 def create_temporal_features(df):
@@ -61,7 +61,7 @@ def train_xgboost_model(city):
     
     # Feature columns
     feature_cols = ['Temp', 'Wind', 'Humidity', 'Precip', 
-                   'month_sin', 'month_cos', 'day_sin', 'day_cos']
+                    'month_sin', 'month_cos', 'day_sin', 'day_cos']
     
     # Add lag features
     for lag in [1, 2, 3, 7, 14, 30]:
@@ -70,7 +70,7 @@ def train_xgboost_model(city):
     # Add rolling features
     for window in [7, 14, 30]:
         feature_cols.extend([f'pm25_roll_mean_{window}', f'pm25_roll_std_{window}',
-                           f'pm25_roll_min_{window}', f'pm25_roll_max_{window}'])
+                            f'pm25_roll_min_{window}', f'pm25_roll_max_{window}'])
     
     X_train = train_data[feature_cols]
     y_train = train_data['pm25']
@@ -129,7 +129,7 @@ def generate_future_predictions(city, model, feature_cols, historical_data):
             # Use last 30 days from historical data
             recent_history = historical_data[['pm25']].tail(30).copy()
             recent_history = pd.concat([recent_history, 
-                                       pd.DataFrame({'pm25': predictions})], 
+                                      pd.DataFrame({'pm25': predictions})], 
                                       ignore_index=True)
         else:
             # Use previous predictions
@@ -217,14 +217,17 @@ def create_annual_forecast_plots():
     ax.set_ylabel('PM2.5 (μg/m³)', fontsize=13, fontweight='bold')
     ax.legend(fontsize=12, loc='upper right')
     ax.grid(True, alpha=0.3, linestyle='--')
-    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
     
+    # Straight Dates
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=0, ha='center')
+    
+    # --- CHANGED: DPI set to 500 ---
     output_path = 'Results/Forecast_2026_2030_LongTerm.png'
-    plt.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
-    print(f"Saved: {output_path}")
+    plt.savefig(output_path, dpi=500, bbox_inches='tight', facecolor='white')
+    print(f"Saved: {output_path} (DPI=500)")
     plt.close()
     
-    # Plot 2: Year-by-year breakdown (like the old plots)
+    # Plot 2: Year-by-year breakdown
     years = [2026, 2027, 2028, 2029, 2030]
     
     for city, city_label in zip(cities, city_labels):
@@ -241,20 +244,14 @@ def create_annual_forecast_plots():
             ax = axes[idx]
             year_data = forecast[forecast['Date'].dt.year == year]
             
+            # Straight lines (no markers)
             ax.plot(year_data['Date'], year_data['pm25_forecast'],
-                   color=colors[city], linewidth=2, marker='o', markersize=3)
+                    color=colors[city], linewidth=2, marker=None)
             
             # Add mean line
             mean_val = year_data['pm25_forecast'].mean()
             ax.axhline(y=mean_val, color='red', linestyle='--', linewidth=2,
                       label=f'Mean: {mean_val:.2f} μg/m³')
-            
-            # Seasonal shading (approximate)
-            # Winter: Dec-Feb, Spring: Mar-May, Summer: Jun-Aug, Fall: Sep-Nov
-            winter_color = '#AED6F1'
-            spring_color = '#ABEBC6'
-            summer_color = '#FAD7A0'
-            fall_color = '#F5B7B1'
             
             ax.set_title(f'{year} Forecast', fontsize=14, fontweight='bold', pad=10)
             ax.set_ylabel('PM2.5 (μg/m³)', fontsize=12, fontweight='bold')
@@ -264,12 +261,15 @@ def create_annual_forecast_plots():
             if idx == 4:  # Last plot
                 ax.set_xlabel('Date', fontsize=12, fontweight='bold')
             
-            plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
+            # Straight Dates
+            plt.setp(ax.xaxis.get_majorticklabels(), rotation=0, ha='center')
         
         plt.tight_layout()
+        
+        # --- CHANGED: DPI set to 500 ---
         output_path = f'Results/{city}_Annual_Forecasts_2026_2030.png'
-        plt.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
-        print(f"Saved: {output_path}")
+        plt.savefig(output_path, dpi=500, bbox_inches='tight', facecolor='white')
+        print(f"Saved: {output_path} (DPI=500)")
         plt.close()
     
     # Save forecast CSVs
@@ -284,24 +284,6 @@ def create_annual_forecast_plots():
     print("\n" + "="*80)
     print("ALL FORECAST PLOTS CREATED!")
     print("="*80)
-    print("\nGenerated Files:")
-    print("   1. Results/Forecast_2026_2030_LongTerm.png (All cities)")
-    print("   2. Results/Beijing_Annual_Forecasts_2026_2030.png")
-    print("   3. Results/NewDelhi_Annual_Forecasts_2026_2030.png")
-    print("   4. Results/Kathmandu_Annual_Forecasts_2026_2030.png")
-    print("   5. Results/[City]_Forecast_2026_2030.csv (Data files)")
-    
-    print("\nFORECAST SUMMARY (2026-2030):")
-    for city, city_label in zip(cities, city_labels):
-        forecast = all_forecasts[city]
-        print(f"\n{city_label}:")
-        print(f"   Mean PM2.5: {forecast['pm25_forecast'].mean():.2f} μg/m³")
-        print(f"   Max PM2.5: {forecast['pm25_forecast'].max():.2f} μg/m³")
-        print(f"   Min PM2.5: {forecast['pm25_forecast'].min():.2f} μg/m³")
-        
-        for year in years:
-            year_mean = forecast[forecast['Date'].dt.year == year]['pm25_forecast'].mean()
-            print(f"   {year} Mean: {year_mean:.2f} μg/m³")
 
 if __name__ == "__main__":
     create_annual_forecast_plots()
